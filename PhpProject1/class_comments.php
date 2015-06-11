@@ -92,6 +92,7 @@ class Comments {
                     $aInsert['i_id'] = $this->request->post['comment_i_id'];
 
                     $this->db->insert('comments', $aInsert);
+                    // refreash
                 }
             break;
             case 'delete':
@@ -163,6 +164,8 @@ class Comments {
                     $aWhere['id'] = $this->request->post['comment_i'];
 
                     $oDb->update('comments', $aInsert, $aWhere);
+                    
+                    // refreash
                 }
             break;
         }
