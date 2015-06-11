@@ -23,20 +23,8 @@ class Comments {
         $this->user = $oUser;
     }
     
-    public function getForm($nId, $sSwitch) {
         
-    }
-    
-    public function printComments($nId, $sSwitch) {
-        $this->makeModel();
-        $aComments = $this->getComments($nId, $sSwitch);
-        printCommentsForm($iId, $sSwitch);
-        foreach($aComments as $aComment) {
-            printComments($aComment);
-        }
-    }
-    
-    private function getComments($nId, $sSwitch) {
+    public function getComments($nId, $sSwitch) {
         $sQuery = '
             SELECT
                 comments.text,
@@ -90,8 +78,8 @@ class Comments {
     }
     
     private function makeModel() {
-        if(empty($this->request->post['comment_i_id']) || empty($this->request->post['comment_i_switch'])
-                || empty($this->request->post['comment_action']) || empty($this->request->post['comment_text'])) {
+        if(empty($this->request->post['comment_action']) and $this->user->data['user_id'] != ANNONYMOUS && 
+                !iBOT) {
             return;
         }
         
@@ -112,6 +100,40 @@ class Comments {
                     $aWhere['id'] = $this->request->post['comment_i'];
                     
                     $this->db->delete('comments', $aWhere);
+                }
+            break;
+            case 'vote_up':
+                if($this->user->reputation_level(2)) {
+                    if(!empty($this->request->post['comment_i'])) {
+                        $aInsert = array();
+                        $aInsert['user_id'] = $this->user->data['user_id'];
+                        $aInsert['comment_id'] = $this->request->post['comment_id'];
+                        $aInsert['date'] = date('Y-m-d H:i:s');
+                        $aInsert['vote'] = 1;
+                        
+                        $this->db->insertUpdate('comments_vote', $aInsert);
+                    } else {
+                        // Error 1. log->
+                    }
+                } else {
+                    // Your Tibia Royal level is too small to make this operation, you can do that from level 2.
+                }
+            break;
+            case 'vote_down':
+                if($this->user->reputation_level(4)) {
+                    if(!empty($this->request->post['comment_i'])) {
+                        $aInsert = array();
+                        $aInsert['user_id'] = $this->user->data['user_id'];
+                        $aInsert['comment_id'] = $this->request->post['comment_id'];
+                        $aInsert['date'] = date('Y-m-d H:i:s');
+                        $aInsert['vote'] = -1;
+                        
+                        $this->db->insertUpdate('comments_vote', $aInsert);
+                    } else {
+                        // Error 1. log->
+                    }
+                } else {
+                    // Your Tibia Royal level is too small to make this operation, you can do that from level 4.
                 }
             break;
             case 'edit':
