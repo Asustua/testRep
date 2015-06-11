@@ -25,9 +25,14 @@ class Comments {
     
         
     public function getComments($nId, $sSwitch) {
+        // user => avatar, color, id
         $sQuery = '
             SELECT
+                comments.id,
+                comments.date,
                 comments.text,
+                users.username,
+                comments_votes.id AS voted,
                 (
                     SELECT
                         COUNT(*)
@@ -36,9 +41,21 @@ class Comments {
                     WHERE
                         c.switch = "c"
                         AND c.i_id = comments.id
-                ) as additional_comments
+                ) AS additional_comments,
+                (
+                    SELECT
+                        SUM(comments_votes)
+                    FROM
+                        comments_votes
+                    WHERE
+                        comments_votes.comments_id = comments.id
+                ) AS comments_vote
             FROM
                 comments
+            LEFT JOIN
+                users ON users.user_id = comments.user_id
+            LEFT JOIN
+                comments_votes ON comments_votes.user_id = '.$this->user->data['user_id'].'
             WHERE
                 comments.switch = '.$this->db->sql_escape($sSwitch).'
                 AND comments.i_id = '.(int)$nId;
@@ -53,9 +70,22 @@ class Comments {
             if($aRows['additional_comments'] > 0) {
                 $sQuery = '
                     SELECT
-                        comments.text
+                        comments.text,
+                        comments_votes.id AS voted,
+                        (
+                            SELECT
+                                SUM(comments_votes)
+                            FROM
+                                comments_votes
+                            WHERE
+                                comments_votes.comments_id = comments.id
+                        ) AS comments_vote
                     FROM
                         comments
+                    LEFT JOIN
+                        users ON users.user_id = comments.user_id
+                    LEFT JOIN
+                        comments_votes ON comments_votes.user_id = '.$this->user->data['user_id'].'
                     WHERE
                         comments.switch = "c"
                         AND comments.i_id = '.(int)$aRows['id'];
@@ -63,16 +93,22 @@ class Comments {
                 $oSql_additional = $this->db->sql_query($sQuery);
                 
                 while($aRows_additional = $this->db->sql_fetchrow($oSql_additional)) {
+                    
                     $aAdditional[] = array(
                         'text'  => $aRows_additional['text'],
-                        'user'  => '',
-                        'date'  => ''
+                        'user'  => stripslashes($aRows_additional['username']),
+                        'date'  => '',
+                        'comments_vote' => $aRows_additional['comments_vote'],
+                        'voted'     => $aRows_additional['voted'],
                     );
                 }
             }
             $aComments[] = array(
                 'additional'    => $aAdditional,
-                'text'          => ''
+                'text'          => '',
+                'user'  => stripslashes($aRows_additional['username']),
+                'comments_vote' => $aRows_additional['comments_vote'],
+                'voted'     => $aRows_additional['voted'],
             );
         }
     }
