@@ -106,9 +106,9 @@ class Comments {
             $aComments[] = array(
                 'additional'    => $aAdditional,
                 'text'          => '',
-                'user'  => stripslashes($aRows_additional['username']),
-                'comments_vote' => $aRows_additional['comments_vote'],
-                'voted'     => $aRows_additional['voted'],
+                'user'  => stripslashes($aRows['username']),
+                'comments_vote' => $aRows['comments_vote'],
+                'voted'     => $aRows['voted'],
             );
         }
     }
