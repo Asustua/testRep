@@ -77,6 +77,11 @@ class Comments {
         }
     }
     
+    private function refreash() {
+        header('Refresh: 0');
+        die();
+    }
+    
     private function makeModel() {
         if(empty($this->request->post['comment_action']) and $this->user->data['user_id'] != ANNONYMOUS && 
                 !iBOT) {
@@ -92,7 +97,7 @@ class Comments {
                     $aInsert['i_id'] = $this->request->post['comment_i_id'];
 
                     $this->db->insert('comments', $aInsert);
-                    // refreash
+                    $this->refreash();
                 }
             break;
             case 'delete':
@@ -165,7 +170,7 @@ class Comments {
 
                     $oDb->update('comments', $aInsert, $aWhere);
                     
-                    // refreash
+                    $this->refreash();
                 }
             break;
         }
