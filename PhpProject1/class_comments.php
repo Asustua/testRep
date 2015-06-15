@@ -22,7 +22,8 @@ $sString = '
 [ins]ewww[/ins]
 [ul]
 [li]aaaa[/li]
-[li]zzzz[/li]
+[li]zzzz
+test[/li]
 [/ul]
 [ol]
 [li]aaaa[/li]
@@ -61,6 +62,7 @@ aaaa[sub]z[/sub][sup]x[/sup]
 [/tr]
 [/table]
 
+[img src=http://www.sgupdate.com/grafik/icons/gb_disabled.gif float=right width=100px height=100px]
 ';
 $oBbcode = new bbcode();
 echo $oBbcode->do_bbcode($sString);
@@ -191,14 +193,51 @@ class bbcode {
         
         return $sRet;
     }
+    
+    private function do_img($aMatches) {
+        $sRet = '';
+        $sStyle = '';
+        
+        $aStyle = array();
+        if(!empty($aMatches['float'])) {
+            $aStyle[] = 'float: '.$aMatches['float'];
+        }
+        
+        if(!empty($aMatches['width'])) {
+            $aStyle[] = 'width: '.$aMatches['width'];
+        }
+        
+        if(!empty($aMatches['height'])) {
+            $aStyle[] = 'height: '.$aMatches['height'];
+        }
+        
+        if(!empty($aMatches['border'])) {
+            // $aStyle[] = 'height: '.$aMatches['height'];
+        }
+        
+        if(!empty($aStyle)) {
+            $sStyle = 'style="'.implode(';', $aStyle).'"';
+        }
+        
+        $aHelp = explode(' ', $aMatches['src']);
+        
+        $sRet .= '<img src="'.$aHelp[0].'" '.$sStyle.'>';
+        
+        return $sRet;
+    }
 
     public function do_bbcode($sText) {
         
         // $sMsg = nl2br($sMsg);
+        $sText = preg_replace('/(\[ul\]([^\r\n]*))(\r\n)*([^\r\n]*\[li\])/', '$1$4', $sText);
+        $sText = preg_replace('/(\[ol\]([^\r\n]*))(\r\n)*([^\r\n]*\[li\])/', '$1$4', $sText);
+        $sText = preg_replace('!(\[/li\]([^\r\n]*))(\r\n)*([^\r\n]*\[/ul\])!', '$1$4', $sText);
+        $sText = preg_replace('!(\[/li\]([^\r\n]*))(\r\n)*([^\r\n]*\[/ol\])!', '$1$4', $sText);
+        $sText = preg_replace('!(\[/li\]([^\r\n]*))(\r\n)*([^\r\n]*\[li\])!', '$1$4', $sText);
         $aText = explode(PHP_EOL, $sText);
-        
+
         foreach($aText as $iKey => $sMsg) {
-            if(empty($sMsg))                continue;
+            
             // [b] -> strong
             // [h2] -> list element
             $sMsg = preg_replace_callback('!\[h2(?<toc> toc=false|)\](?<text>.*?)\[/h2\]!is', array($this,'do_headers'), $sMsg);
@@ -268,7 +307,6 @@ class bbcode {
         // anchor
         $sText = preg_replace('!\[anchor=([0-9a-zA-Z]+)\]!is', '<a name="$1"></a>', $sText);
         
-        
         /* Tables */
         $sText = preg_replace_callback('!\[table( float=(?<float>left|right)|)( align=(?<align>left|center|right)|)( width=(?<width>[0-9px%]{0,8})|)\]!is',array($this, 'do_table'), $sText);
         $sText = str_replace('[/table]','</table>', $sText);
@@ -283,6 +321,9 @@ class bbcode {
         /////////// float, align, width
         // ( float=(?<float>left|right)|)( align=(?<align>left|center|right)|)( width=(?<width>[0-9px%]{0,8})|)
         ///////////
+        // Image => [img]
+        $sText = preg_replace_callback('!\[img src=(?<src>[^\[]+?)( float=(?<float>left|right)|)( border=(?<border>1|0)|)( align=(?<align>left|center|right)|)( width=(?<width>[0-9px%]{0,8})|)( height=(?<height>[0-9px%]{0,8})|)\]!is', array($this,'do_img'), $sText);
+        
         $sText = preg_replace_callback('!\[div( float=(?<float>left|right)|)( align=(?<align>left|center|right)|)( width=(?<width>[0-9px%]{0,8})|)\]!is', array($this,'do_div'), $sText);
         $sText = str_replace('[/div]','</div>', $sText);
         
