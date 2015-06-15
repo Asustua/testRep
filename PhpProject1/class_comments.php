@@ -63,6 +63,17 @@ aaaa[sub]z[/sub][sup]x[/sup]
 [/table]
 
 [img src=http://www.sgupdate.com/grafik/icons/gb_disabled.gif float=right width=100px height=100px]
+
+[toolpit titel="Testing this toolpit "]Test[/toolpit]
+[toolpit]Test[/toolpit]
+[tabs]
+[tab="test"]aaaaa
+ssssssss
+zzzzzzzzzzzz[/tab]
+[tab="zzz"]sda
+sdsa
+dasds[/tab]
+[/tabs]
 ';
 $oBbcode = new bbcode();
 echo $oBbcode->do_bbcode($sString);
@@ -72,6 +83,7 @@ class bbcode {
     private $toc = array();
     private $toc_sub = array();
     private $toc_position = 0;
+    private $iTabs = 0;
     
     private function remove_new_lines() {
         
@@ -225,10 +237,51 @@ class bbcode {
         
         return $sRet;
     }
+    
+    private function do_toolpit($aMatches) {
+        $sRet = '';
+        $sRet .= '<div class="toolpit">';
+        $sRet .= '<div class="title">'.$aMatches['titel'].'</div>';
+        $sRet .= '<div class="text">'.$aMatches['text'].'</div>';
+        $sRet .= '</div>';
+        
+        return $sRet;
+    }
+    
+    private function do_tabs($aMatches) {
+        $sRet = '';
+        $aRet = array();
+        preg_match_all('#\[tab="(?<titel>(.*?))"\](?<tab>(.*?))\[/tab\]#s', $aMatches['tabs'],$aRet);
+        
+        $aHrefs = array();
+        
+        $sRet .= '<div class="tab">';
+        $sRet .= '<ul>';
+        foreach($aRet['titel'] as $iKey => $sTitel) {
+            $sHrefs[$iKey] = strtolower(strip_tags(str_replace(' ', '_', $sTitel)));
+            $sRet .= '<li>';
+            $sRet .= '<a href="#'.$this->iTabs.'_'.$sHrefs[$iKey].'">';
+            $sRet .= $sTitel;
+            $sRet .= '</a>';
+            $sRet .= '</li>';
+        }
+        $sRet .= '</ul>';
+        foreach($aRet['tab'] as $iKey => $sContent) {
+            $sRet .= '<div id="'.$this->iTabs.'_'.$sHrefs[$iKey].'">';
+            $sRet .= $sContent;
+            $sRet .= '</div>';
+        }
+        $sRet .= '</div>';
+        
+        $this->iTabs++;
+        return $sRet;
+    }
 
     public function do_bbcode($sText) {
         
         // $sMsg = nl2br($sMsg);
+        $sText = preg_replace_callback('#\[tabs\](?<tabs>(.*?))\[/tabs\]#s', array($this, 'do_tabs'), $sText);
+        
         $sText = preg_replace('/(\[ul\]([^\r\n]*))(\r\n)*([^\r\n]*\[li\])/', '$1$4', $sText);
         $sText = preg_replace('/(\[ol\]([^\r\n]*))(\r\n)*([^\r\n]*\[li\])/', '$1$4', $sText);
         $sText = preg_replace('!(\[/li\]([^\r\n]*))(\r\n)*([^\r\n]*\[/ul\])!', '$1$4', $sText);
@@ -317,6 +370,7 @@ class bbcode {
         $sText = preg_replace_callback('!\[td( rowspan=(?<rowspan>[0-9]+)|)( colspan=(?<colspan>[0-9]+)|)\]!is',array($this, 'do_td'), $sText);
         $sText = str_replace('[/td]','</td>', $sText);
         
+        $sText = preg_replace_callback('!\[toolpit( titel="(?<titel>.*?)"|)\](?<text>.*?)\[/toolpit\]!is',array($this, 'do_toolpit'), $sText);
         // div
         /////////// float, align, width
         // ( float=(?<float>left|right)|)( align=(?<align>left|center|right)|)( width=(?<width>[0-9px%]{0,8})|)
